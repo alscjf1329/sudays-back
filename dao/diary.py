@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from model.diary import Diary, DiarySaveDTO
 import uuid
+from typing import Optional
 
 class DiaryDAO:
     def __init__(self, db: Session):
@@ -16,11 +17,11 @@ class DiaryDAO:
             self.db.rollback()
             raise e
             
-    def find_by_id(self, diary_id: uuid.UUID) -> Diary:
+    def find_by_id(self, diary_id: uuid.UUID) -> Optional[Diary]:
         return self.db.query(Diary).filter(Diary.id == diary_id).first()
         
-    def find_by_yyyymm(self, start_yyyymm: str, end_yyyymm: str) -> list[Diary]:
-        return self.db.query(Diary).filter(Diary.yyyymm >= start_yyyymm).filter(Diary.yyyymm <= end_yyyymm).all()
+    def find_by_yyyymmdd(self, yyyymmdd: str) -> Optional[Diary]:
+        return self.db.query(Diary).filter(Diary.yyyymmdd == yyyymmdd).first()
         
     def delete(self, diary_id: uuid.UUID) -> None:
         diary = self.find_by_id(diary_id)

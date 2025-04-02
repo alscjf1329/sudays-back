@@ -4,21 +4,15 @@ from fastapi import FastAPI
 from controller.diary.diary import router as diary_router
 from model.diary import Base
 from config.database import init_database, init_db
-from config.logger import setup_logger
+from config.logger import get_logger
 
 # 환경 변수 먼저 로드
 load_dotenv(os.getenv("ENV_FILE"))
 
 # 로거 설정
-logger = setup_logger()
+logger = get_logger()
 
-logger.debug("디버그 메시지")
-logger.info("정보 메시지")
-logger.warning("경고 메시지")
-logger.error("에러 메시지")
-logger.critical("치명적 에러 메시지")
-
-logger.info(f"ENV_FILE: {os.getenv('ENV_FILE')}")
+logger.info(os.getenv("START_MESSAGE"))
 
 # 데이터베이스 초기화
 init_database()
@@ -27,8 +21,17 @@ init_database()
 if os.getenv("DDL_AUTO") == "create":
     init_db()
 
+## 환경 파일 검토
+def check_env_file():
+    logger.debug("환경 파일 검토를 시작합니다.")
+    if os.getenv("IMAGE_DIR") is None:
+        logger.error("IMAGE_DIR 환경 변수가 설정되지 않았습니다.")
+        raise ValueError("IMAGE_DIR 환경 변수가 설정되지 않았습니다.")
+    logger.info("환경 파일 검토가 완료되었습니다.")
+
+check_env_file()
+
 app = FastAPI()
 
+## 라우터 등록
 app.include_router(diary_router)
-
-logger.info("FastAPI 서버가 시작되었습니다.")

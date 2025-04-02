@@ -1,12 +1,18 @@
 from pydantic import BaseModel
+from fastapi import UploadFile
 
-class DiarySaveRequestDTO(BaseModel):
+class SaveDiaryRequestDTO(BaseModel):
     yyyymmdd: str
-    title: str
     content: str
+    images: list[UploadFile]
 
-class DiarySaveResponseDTO(BaseModel):
+class SaveDiaryResponseDTO(BaseModel):
     id: int
     yyyymmdd: str
-    title: str
     content: str
+    image_urls: list[str]
+
+class GetDiaryResponseDTO(BaseModel):
+    id: int
+    content: str
+    image_urls: list[str]

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from model.diary import Diary, DiarySaveDTO
+from model.diary import Diary
 import uuid
 from typing import Optional
 
@@ -7,7 +7,7 @@ class DiaryDAO:
     def __init__(self, db: Session):
         self.db = db
         
-    def save(self, diary: DiarySaveDTO) -> Diary:
+    def save(self, diary: Diary) -> Diary:
         try:
             self.db.add(diary)
             self.db.commit()
@@ -17,8 +17,8 @@ class DiaryDAO:
             self.db.rollback()
             raise e
             
-    def find_by_id(self, diary_id: uuid.UUID) -> Optional[Diary]:
-        return self.db.query(Diary).filter(Diary.id == diary_id).first()
+    def find_by_ids(self, ids: list[uuid.UUID]) -> Optional[Diary]:
+        return self.db.query(Diary).filter(Diary.id.in_(ids)).all()
         
     def find_by_yyyymmdd(self, yyyymmdd: str) -> Optional[Diary]:
         return self.db.query(Diary).filter(Diary.yyyymmdd == yyyymmdd).first()

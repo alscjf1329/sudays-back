@@ -1,12 +1,18 @@
 from pydantic import BaseModel
+import uuid
 
-class DiarySaveRequestDTO(BaseModel):
+class SaveDiaryRequestDTO(BaseModel):
     yyyymmdd: str
-    title: str
     content: str
 
-class DiarySaveResponseDTO(BaseModel):
-    id: int
+class SaveDiaryResponseDTO(BaseModel):
+    id: uuid.UUID
     yyyymmdd: str
-    title: str
     content: str
+    image_ids: list[uuid.UUID]
+
+class GetDiaryResponseDTO(BaseModel):
+    id: uuid.UUID
+    yyyymmdd: str
+    content: str
+    image_ids: list[uuid.UUID]

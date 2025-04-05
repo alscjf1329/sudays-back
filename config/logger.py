@@ -1,7 +1,8 @@
 import logging
 import os
 from logging.handlers import TimedRotatingFileHandler
-from datetime import datetime
+
+LOGGER = None
 
 def setup_logger():
     # 로그 디렉토리 생성
@@ -44,3 +45,9 @@ def setup_logger():
     logger.addHandler(console_handler)
 
     return logger
+
+def get_logger():
+    global LOGGER
+    if LOGGER is None:
+        LOGGER = setup_logger()
+    return LOGGER

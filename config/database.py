@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import os
-from model.diary import Base as DiaryBase
-from model.diary_image import Base as DiaryImageBase
+from model.diary.diary import Base as DiaryBase
+from model.diary.diary_image import Base as DiaryImageBase
 
 def get_database_url():
     return f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"

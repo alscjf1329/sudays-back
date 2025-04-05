@@ -33,10 +33,10 @@ check_env_file()
 
 app = FastAPI()
 
-logger.info(os.getenv("ALLOW_ORIGINS").split(","))
-logger.info(os.getenv("ALLOW_CREDENTIALS", "true").lower() == "true")
-logger.info(os.getenv("ALLOW_METHODS", "GET,POST,OPTIONS").split(","))
-logger.info(os.getenv("ALLOW_HEADERS", "Content-Type,Authorization").split(","))
+logger.info(f"Allow Origins: {os.getenv('ALLOW_ORIGINS')}")
+logger.info(f"Allow Credentials: {os.getenv('ALLOW_CREDENTIALS', 'true').lower() == 'true'}")
+logger.info(f"Allow Methods: {os.getenv('ALLOW_METHODS', 'GET,POST,OPTIONS')}")
+logger.info(f"Allow Headers: {os.getenv('ALLOW_HEADERS', 'Content-Type,Authorization')}")
 
 # CORS 미들웨어 설정
 app.add_middleware(

@@ -41,8 +41,22 @@ if "%mode%"=="dev" (
     echo [INFO] 개발 모드로 서비스 실행 시작
     echo ------------------------------------------------------------
     echo [INFO] 환경 파일 로딩: %ENV_FILE%
-    echo [INFO] Docker 컨테이너 상태 확인 중...
 
+    :: Docker Desktop 실행 여부 확인
+    tasklist /FI "IMAGENAME eq Docker Desktop.exe" | findstr /I "Docker Desktop.exe" >nul
+    if errorlevel 1 (
+        echo ❗ Docker Desktop이 실행되어 있지 않습니다. 먼저 Docker를 실행해주세요.
+    )
+
+    echo [INFO] Docker 데몬 상태 확인 중...
+    docker info >nul 2>&1
+    if errorlevel 1 (
+        echo ❌ Docker가 실행되고 있지 않거나, 데몬에 연결할 수 없습니다.
+        echo ⚠️  Docker Desktop을 먼저 실행해주세요.
+        exit /b 1
+    )
+
+    echo [INFO] Docker 컨테이너 상태 확인 중...
     docker ps | findstr "%CONTAINER_NAME%" >nul
     if %errorlevel%==0 (
         echo [OK] Docker 컨테이너 [%CONTAINER_NAME%] 이미 실행 중

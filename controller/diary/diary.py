@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
 from sqlalchemy.orm import Session
 from dto.diary_dto import SaveDiaryResponseDTO, GetDiaryResponseDTO
 from config.database import get_db
-from dao.diary import DiaryDAO
-from model.diary import Diary
+from dao.diary.diary_dao import DiaryDAO
+from model.diary.diary import Diary
 import os
 import uuid
 from config.logger import get_logger

@@ -1,7 +1,6 @@
 from sqlalchemy import Column, String, DateTime, UUID
 from sqlalchemy.ext.declarative import declarative_base 
 from datetime import datetime, UTC
-from model.diary import Base
 import uuid
 
 Base = declarative_base()

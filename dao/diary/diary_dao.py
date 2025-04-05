@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from model.diary import Diary
+from model.diary.diary import Diary
 import uuid
 from typing import Optional
 

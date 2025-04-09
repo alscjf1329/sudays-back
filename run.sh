@@ -8,6 +8,7 @@ if [ -z "$1" ] || [ "$1" == "--help" ]; then
     echo "║  ./run.sh [옵션]                                       ║"
     echo "║    --dev    개발 모드로 실행 (Docker 컨테이너 포함)    ║"
     echo "║    --prod   운영 모드로 실행                           ║"
+    echo "║    --test   테스트 실행                                ║"
     echo "║    --help   도움말 표시                                ║"
     echo "╚════════════════════════════════════════════════════════╝"
     exit 0
@@ -24,6 +25,55 @@ if [ "$ARG" == "--dev" ]; then
     mode="dev"
 elif [ "$ARG" == "--prod" ]; then
     mode="prod"
+elif [ "$ARG" == "--test" ]; then
+    mode="test"
+fi
+
+# ========================= 테스트 실행 ============================
+echo "╔════════════════════════════════════════════════════════╗"
+echo "║ 🧪 테스트를 실행합니다                                 "
+echo "╠════════════════════════════════════════════════════════╣"
+echo "║ 📁 테스트 디렉토리: $ROOT_DIR/test                     "
+echo "╠════════════════════════════════════════════════════════╣"
+
+# 테스트 결과를 임시 파일에 저장
+TEST_OUTPUT=$(python -m unittest discover -s test -p "test_*.py" -v 2>&1)
+TEST_RESULT=$?
+
+# 테스트 결과 출력을 이쁘게 포맷팅
+echo "$TEST_OUTPUT" | while IFS= read -r line; do
+    if [[ $line == test* ]]; then
+        if [[ $line == *"ok"* ]]; then
+            echo "║ ✅ $line"
+        elif [[ $line == *"FAIL"* ]]; then
+            echo "║ ❌ $line"
+        elif [[ $line == *"ERROR"* ]]; then
+            echo "║ 💥 $line"
+        else
+            echo "║ 🔄 $line"
+        fi
+    else
+        echo "║ $line"
+    fi
+done
+
+echo "╠════════════════════════════════════════════════════════╣"
+if [ $TEST_RESULT -eq 0 ]; then
+    echo "║ ✨ 모든 테스트가 성공적으로 완료되었습니다!           "
+else
+    echo "║ 💥 테스트 실행 중 오류가 발생했습니다                "
+fi
+echo "╚════════════════════════════════════════════════════════╝"
+
+# 테스트 실패시 종료
+if [ $TEST_RESULT -ne 0 ]; then
+    echo "❌ 테스트 실패로 서비스를 시작할 수 없습니다."
+    exit $TEST_RESULT
+fi
+
+# 테스트 모드인 경우 여기서 종료
+if [ "$mode" == "test" ]; then
+    exit $TEST_RESULT
 fi
 
 # ========================= 개발 모드 ============================

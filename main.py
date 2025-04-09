@@ -12,40 +12,53 @@ load_dotenv(os.getenv("ENV_FILE"))
 # 로거 설정
 logger = get_logger()
 
-logger.info(os.getenv("START_MESSAGE"))
+logger.info("╔════════════════════════════════════════════════════════╗")
+logger.info("║                서버 시작 프로세스                      ║") 
+logger.info("╠════════════════════════════════════════════════════════╣")
 
 # 데이터베이스 초기화
 init_database()
+logger.info("║ ✅ 데이터베이스 초기화 완료")
 
 # 서버 시작 시 테이블 생성
 if os.getenv("DDL_AUTO") == "create":
     create_tables()
+    logger.info("║ 📊 테이블 생성 완료")
 
 ## 환경 파일 검토
 def check_env_file():
-    logger.debug("환경 파일 검토를 시작합니다.")
+    logger.info("║ 🔍 환경 파일 검토 시작")
     if os.getenv("IMAGE_DIR") is None:
-        logger.error("IMAGE_DIR 환경 변수가 설정되지 않았습니다.")
-        raise ValueError("IMAGE_DIR 환경 변수가 설정되지 않았습니다.")
-    logger.info("환경 파일 검토가 완료되었습니다.")
+        logger.error("║ ❌ IMAGE_DIR 환경 변수가 설정되지 않았습니다")
+        raise ValueError("IMAGE_DIR 환경 변수가 설정되지 않았습니다")
+    logger.info("║ ✅ 환경 파일 검토 완료")
 
 check_env_file()
 
 app = FastAPI()
 
-logger.info(f"Allow Origins: {os.getenv('ALLOW_ORIGINS')}")
-logger.info(f"Allow Credentials: {os.getenv('ALLOW_CREDENTIALS', 'true').lower() == 'true'}")
-logger.info(f"Allow Methods: {os.getenv('ALLOW_METHODS', 'GET,POST,OPTIONS')}")
-logger.info(f"Allow Headers: {os.getenv('ALLOW_HEADERS', 'Content-Type,Authorization')}")
-
 # CORS 미들웨어 설정
+logger.info("║ 🔒 CORS 미들웨어 설정 시작")
+origins = os.getenv("ALLOW_ORIGINS").split(",")
+credentials = os.getenv("ALLOW_CREDENTIALS", "true").lower() == "true"
+methods = os.getenv("ALLOW_METHODS", "GET,POST,OPTIONS").split(",")
+headers = os.getenv("ALLOW_HEADERS", "Content-Type,Authorization").split(",")
+
+logger.info("║ 📝 CORS 설정 상세:")
+logger.info(f"║   - Origins: {origins}")
+logger.info(f"║   - Credentials: {credentials}")
+logger.info(f"║   - Methods: {methods}")
+logger.info(f"║   - Headers: {headers}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("ALLOW_ORIGINS").split(","),
-    allow_credentials=os.getenv("ALLOW_CREDENTIALS", "true").lower() == "true",
-    allow_methods=os.getenv("ALLOW_METHODS", "GET,POST,OPTIONS").split(","),
-    allow_headers=os.getenv("ALLOW_HEADERS", "Content-Type,Authorization").split(","),
+    allow_origins=origins,
+    allow_credentials=credentials,
+    allow_methods=methods,
+    allow_headers=headers,
 )
+logger.info("║ ✅ CORS 미들웨어 설정 완료")
 
 app.include_router(diary_router)
-logger.info("FastAPI 서버가 시작되었습니다.")
+logger.info("║ 🚀 FastAPI 서버 시작 완료")
+logger.info("╚════════════════════════════════════════════════════════╝")

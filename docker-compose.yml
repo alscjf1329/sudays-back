@@ -1,9 +1,9 @@
 services:
   postgres:
     image: postgres:latest
-    container_name: my-postgres
+    container_name: ${POSTGRES_CONTAINER_NAME:-postgres}
     env_file:
-      - ${ENV_FILE:-env/dev.env}  # ENV_FILE 환경변수가 없으면 기본값으로 dev.env 사용
+      - ${ENV_FILE:-env/dev.env} # ENV_FILE 환경변수가 없으면 기본값으로 dev.env 사용
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}

@@ -1,14 +1,14 @@
 from sqlalchemy.orm import Session
 from model.member.member import Member, MemberRole, MemberGrade
 from typing import Optional, List
-from util.hash_util import PasswordUtil
+from util.hash_util import HashUtil
 
 class MemberDAO:
     def __init__(self, session: Session):
         self.session = session
 
     def create_member(self, email: str, password: str, nickname: str) -> Member:
-        hashed_password = PasswordUtil.hash_password(password)
+        hashed_password = HashUtil.hash_password(password)
         member = Member(email=email, password=hashed_password, nickname=nickname)
         self.session.add(member)
         self.session.commit()
@@ -31,7 +31,7 @@ class MemberDAO:
         member = self.get_member_by_email(email)
         if not member:
             return False
-        return PasswordUtil.verify_password(password, member.password)
+        return HashUtil.verify_password(password, member.password)
 
     def update_member(self, member_id: int, **kwargs) -> Optional[Member]:
         member = self.get_member_by_id(member_id)
@@ -39,7 +39,7 @@ class MemberDAO:
             for key, value in kwargs.items():
                 if hasattr(member, key):
                     if key == 'password':
-                        value = PasswordUtil.hash_password(value)
+                        value = HashUtil.hash_password(value)
                     setattr(member, key, value)
             self.session.commit()
             self.session.refresh(member)

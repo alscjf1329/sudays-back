@@ -14,7 +14,18 @@ if [ -z "$1" ] || [ "$1" == "--help" ]; then
     exit 0
 fi
 
-ROOT_DIR=$(dirname "$(readlink -f "$0")")
+# 운영체제 확인
+case "$OSTYPE" in
+    msys*|win32*|cygwin*)
+        # Windows 환경
+        ROOT_DIR=$(cd "$(dirname "$0")" && pwd)
+        ;;
+    *)
+        # Linux/Unix/Mac 환경
+        ROOT_DIR=$(dirname "$(readlink -f "$0")")
+        ;;
+esac
+
 source "$ROOT_DIR/bin/venv.sh"
 cd "$ROOT_DIR"
 
@@ -112,10 +123,44 @@ if [ "$mode" == "dev" ]; then
         docker-compose --env-file "$ENV_FILE" up -d
     fi
 
+    # 운영체제별 포트 확인 방법
     echo "║ ⏳ DB 포트 응답 대기 중... ($POSTGRES_HOST:$POSTGRES_PORT)"
-    while ! (echo > /dev/tcp/$POSTGRES_HOST/$POSTGRES_PORT) 2> /dev/null; do
-        sleep 1
+    MAX_RETRIES=30
+    RETRY_COUNT=0
+    DB_READY=0
+
+    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+        case "$OSTYPE" in
+            msys*|win32*|cygwin*)
+                # Windows 환경에서 포트 확인
+                if (echo > /dev/tcp/$POSTGRES_HOST/$POSTGRES_PORT) 2>/dev/null || \
+                   (python -c "import socket; socket.socket().connect(('$POSTGRES_HOST', $POSTGRES_PORT))" 2>/dev/null); then
+                    DB_READY=1
+                    break
+                fi
+                ;;
+            *)
+                # Linux/Unix/Mac 환경에서 포트 확인
+                if (echo > /dev/tcp/$POSTGRES_HOST/$POSTGRES_PORT) 2>/dev/null || \
+                   (python3 -c "import socket; socket.socket().connect(('$POSTGRES_HOST', $POSTGRES_PORT))" 2>/dev/null); then
+                    DB_READY=1
+                    break
+                fi
+                ;;
+        esac
+        
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        echo "║ ⏳ DB 연결 시도 중... ($RETRY_COUNT/$MAX_RETRIES)"
+        sleep 2
     done
+
+    if [ $DB_READY -eq 0 ]; then
+        echo "║ ❌ DB 연결 실패: $POSTGRES_HOST:$POSTGRES_PORT"
+        echo "║ ⚠️  데이터베이스가 실행 중인지 확인해주세요"
+        echo "╚════════════════════════════════════════════════════════╝"
+        exit 1
+    fi
+
     echo "║ ✨ DB 응답 확인됨 ($POSTGRES_HOST:$POSTGRES_PORT)"
 fi
 

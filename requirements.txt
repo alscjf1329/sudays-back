@@ -1,5 +1,6 @@
 annotated-types==0.7.0
 anyio==4.9.0
+bcrypt==3.2.2
 certifi==2025.1.31
 click==8.1.8
 colorama==0.4.6
@@ -17,6 +18,7 @@ Jinja2==3.1.6
 markdown-it-py==3.0.0
 MarkupSafe==3.0.2
 mdurl==0.1.2
+passlib==1.7.4
 psycopg2==2.9.10
 pydantic==2.10.6
 pydantic_core==2.27.2
@@ -35,4 +37,4 @@ typing_extensions==4.12.2
 uvicorn==0.34.0
 watchfiles==1.0.4
 websockets==15.0.1
-passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0

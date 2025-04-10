@@ -1,19 +1,25 @@
 from sqlalchemy.orm import Session
 from model.member.member import Member, MemberRole, MemberGrade
 from typing import Optional, List
-from util.hash_util import HashUtil
+import logging
+
+logger = logging.getLogger(__name__)
 
 class MemberDAO:
     def __init__(self, session: Session):
         self.session = session
 
-    def create_member(self, email: str, password: str, nickname: str) -> Member:
-        hashed_password = HashUtil.hash_password(password)
-        member = Member(email=email, password=hashed_password, nickname=nickname)
-        self.session.add(member)
-        self.session.commit()
-        self.session.refresh(member)
-        return member
+    def create_member(self, email: str, password: str, nickname: str) -> Optional[Member]:
+        try:
+            member = Member(email=email, password=password, nickname=nickname)
+            self.session.add(member)
+            self.session.commit()
+            self.session.refresh(member)
+            return member
+        except Exception as e:
+            logger.error(f"회원 생성 중 오류 발생: {str(e)}")
+            self.session.rollback()
+            return None
 
     def get_member_by_id(self, member_id: int) -> Optional[Member]:
         return self.session.query(Member).filter(Member.id == member_id).first()
@@ -27,28 +33,34 @@ class MemberDAO:
     def get_members_by_grade(self, grade: MemberGrade) -> List[Member]:
         return self.session.query(Member).filter(Member.grade == grade).all()
 
-    def verify_member_password(self, email: str, password: str) -> bool:
-        member = self.get_member_by_email(email)
-        if not member:
-            return False
-        return HashUtil.verify_password(password, member.password)
-
     def update_member(self, member_id: int, **kwargs) -> Optional[Member]:
-        member = self.get_member_by_id(member_id)
-        if member:
+        try:
+            member = self.get_member_by_id(member_id)
+            if not member:
+                return None
+
+            allowed_fields = {'nickname', 'password', 'role', 'grade'}  # 허용된 필드 목록
             for key, value in kwargs.items():
-                if hasattr(member, key):
-                    if key == 'password':
-                        value = HashUtil.hash_password(value)
+                if key in allowed_fields and hasattr(member, key):
                     setattr(member, key, value)
+
             self.session.commit()
             self.session.refresh(member)
-        return member
+            return member
+        except Exception as e:
+            logger.error(f"회원 정보 업데이트 중 오류 발생: {str(e)}")
+            self.session.rollback()
+            return None
 
     def delete_member(self, member_id: int) -> bool:
-        member = self.get_member_by_id(member_id)
-        if member:
-            self.session.delete(member)
-            self.session.commit()
-            return True
-        return False 
+        try:
+            member = self.get_member_by_id(member_id)
+            if member:
+                self.session.delete(member)
+                self.session.commit()
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"회원 삭제 중 오류 발생: {str(e)}")
+            self.session.rollback()
+            return False 

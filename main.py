@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from controller.diary.diary import router as diary_router
+from controller.auth_controller import router as auth_router
 from config.database import init_database, create_tables
 from config.logger import get_logger
 
@@ -35,7 +36,39 @@ def check_env_file():
 
 check_env_file()
 
-app = FastAPI()
+app = FastAPI(
+    title="Sudays API",
+    description="Sudays 일기 서비스 API",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    swagger_ui_parameters={"defaultModelsExpandDepth": -1},
+    # Postman 테스트를 위한 추가 설정
+    servers=[
+        {"url": "http://localhost:8000", "description": "Local development server"},
+        {"url": "https://api.sudays.com", "description": "Production server"}
+    ]
+)
+
+# Swagger UI에서 인증 설정
+app.openapi = lambda: {
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Sudays API",
+        "version": "1.0.0",
+    },
+    "components": {
+        "securitySchemes": {
+            "Bearer": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
+    "security": [{"Bearer": []}],
+}
 
 # CORS 미들웨어 설정
 logger.info("║ 🔒 CORS 미들웨어 설정 시작")
@@ -60,5 +93,6 @@ app.add_middleware(
 logger.info("║ ✅ CORS 미들웨어 설정 완료")
 
 app.include_router(diary_router)
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
 logger.info("║ 🚀 FastAPI 서버 시작 완료")
 logger.info("╚════════════════════════════════════════════════════════╝")

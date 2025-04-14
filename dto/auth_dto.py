@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
-from fastapi.security import OAuth2PasswordRequestForm
+from typing import Optional
+from datetime import datetime
 
 class Token(BaseModel):
     access_token: str
@@ -9,10 +10,30 @@ class MemberBase(BaseModel):
     email: EmailStr
     nickname: str
 
-class MemberCreate(MemberBase):
+class MemberCreate(BaseModel):
+    email: str
     password: str
+    nickname: str
 
-class Member(MemberBase):
+class MemberResponse(BaseModel):
+    id: str
+    email: str
+    nickname: str
+    role: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class MemberInfoDTO(BaseModel):
+    id: str
+    email: str
+    nickname: str
+    role: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
     class Config:
         from_attributes = True
 

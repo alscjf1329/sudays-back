@@ -17,6 +17,10 @@ class MemberService:
         새로운 회원을 등록합니다.
         """
         try:
+            # 비밀번호 복잡성 검증
+            if not Member.validate_password(password):
+                raise ValueError("비밀번호는 최소 8자 이상이며, 대문자, 소문자, 숫자, 특수문자 중 3가지 이상을 포함해야 합니다")
+
             # 이메일 중복 체크
             existing_member = self.member_dao.get_member_by_email(email)
             if existing_member:
@@ -42,9 +46,11 @@ class MemberService:
                 logger.warning(f"존재하지 않는 이메일로 로그인 시도: {email}")
                 return None
 
-            if self.hash_util.verify_password(password, member.password):
-                return member
-            return None
+            # 비밀번호 검증
+            if not self.hash_util.verify_password(password, member.password):
+                return None
+
+            return member
         except Exception as e:
             logger.error(f"로그인 중 오류 발생: {str(e)}")
             return None
@@ -59,13 +65,19 @@ class MemberService:
         """
         이메일로 회원 정보를 조회합니다.
         """
-        return self.member_dao.get_member_by_email(email)
+        return self.member_dao.find_by_email(email)
+
+    def get_member_by_nickname(self, nickname: str) -> Optional[Member]:
+        """
+        닉네임으로 회원 조회
+        """
+        return self.member_dao.find_by_nickname(nickname)
 
     def get_members_by_role(self, role: MemberRole) -> List[Member]:
         """
         역할별로 회원 목록을 조회합니다.
         """
-        return self.member_dao.get_members_by_role(role)
+        return self.member_dao.find_by_role(role)
 
     def get_members_by_grade(self, grade: MemberGrade) -> List[Member]:
         """

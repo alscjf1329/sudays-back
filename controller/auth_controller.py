@@ -1,21 +1,21 @@
-from fastapi import APIRouter, HTTPException, status, Response, Depends, Form
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import APIRouter, HTTPException, status, Response, Depends, Form, Cookie
 from datetime import timedelta
 from sqlalchemy.orm import Session
-import logging
 
 from config.jwt_config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     create_access_token,
+    create_refresh_token,
+    verify_refresh_token,
 )
 from dto.auth_dto import MemberCreate, Member
 from service.member.member_service import MemberService
-from dependencies.auth_dependencies import get_current_member
+from dependencies.auth_dependencies import get_current_member, oauth2_scheme
 from config.database import get_db
+from config.logger import get_logger
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def signup(member: MemberCreate, db: Session = Depends(get_db)):
@@ -73,9 +73,50 @@ async def login(
     access_token = create_access_token(
         data={"sub": member.email}, expires_delta=access_token_expires
     )
+    refresh_token = create_refresh_token(data={"sub": member.email})
+    
     logger.info(f"로그인 성공 - 이메일: {email}")
     response.headers["Authorization"] = f"Bearer {access_token}"
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=7 * 24 * 60 * 60  # 7 days
+    )
     return {"message": "로그인 성공"}
+
+@router.post("/refresh")
+async def refresh_token(
+    response: Response,
+    refresh_token: str = Cookie(None)
+):
+    """
+    액세스 토큰 갱신 API
+    """
+    logger.info("토큰 갱신 요청")
+    
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="리프레시 토큰이 존재하지 않습니다"
+        )
+    
+    payload = verify_refresh_token(refresh_token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="유효하지 않은 리프레시 토큰입니다"
+        )
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": payload["sub"]}, expires_delta=access_token_expires
+    )
+    
+    response.headers["Authorization"] = f"Bearer {access_token}"
+    return {"message": "토큰이 갱신되었습니다"}
 
 @router.post("/logout")
 async def logout(response: Response):
@@ -83,7 +124,7 @@ async def logout(response: Response):
     로그아웃 API
     """
     logger.info("로그아웃 요청 처리")
-    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
     return {"message": "로그아웃되었습니다"}
 
 @router.get("/me", response_model=Member)

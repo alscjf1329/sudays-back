@@ -3,9 +3,9 @@ from dao.member.member_dao import MemberDAO
 from model.member.member import Member, MemberRole, MemberGrade
 from sqlalchemy.orm import Session
 from util.hash_util import HashUtil
-import logging
+from config.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class MemberService:
     def __init__(self, session: Session):

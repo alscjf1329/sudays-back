@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session
 from model.member.member import Member, MemberRole, MemberGrade
 from typing import Optional, List
-import logging
+import uuid
+from config.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 class MemberDAO:
     def __init__(self, session: Session):
@@ -21,7 +22,7 @@ class MemberDAO:
             self.session.rollback()
             return None
 
-    def get_member_by_id(self, member_id: int) -> Optional[Member]:
+    def get_member_by_id(self, member_id: uuid.UUID) -> Optional[Member]:
         return self.session.query(Member).filter(Member.id == member_id).first()
 
     def get_member_by_email(self, email: str) -> Optional[Member]:
@@ -33,7 +34,7 @@ class MemberDAO:
     def get_members_by_grade(self, grade: MemberGrade) -> List[Member]:
         return self.session.query(Member).filter(Member.grade == grade).all()
 
-    def update_member(self, member_id: int, **kwargs) -> Optional[Member]:
+    def update_member(self, member_id: uuid.UUID, **kwargs) -> Optional[Member]:
         try:
             member = self.get_member_by_id(member_id)
             if not member:
@@ -52,7 +53,7 @@ class MemberDAO:
             self.session.rollback()
             return None
 
-    def delete_member(self, member_id: int) -> bool:
+    def delete_member(self, member_id: uuid.UUID) -> bool:
         try:
             member = self.get_member_by_id(member_id)
             if member:

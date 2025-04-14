@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Response, Depends, Form, Cookie
 from datetime import timedelta
 from sqlalchemy.orm import Session
+import uuid
 
 from config.jwt_config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
@@ -8,44 +9,83 @@ from config.jwt_config import (
     create_refresh_token,
     verify_refresh_token,
 )
-from dto.auth_dto import MemberCreate, Member
+from dto.member_dto import CreateMemberRequestDTO, CreateMemberResponseDTO
 from service.member.member_service import MemberService
 from dependencies.auth_dependencies import get_current_member, oauth2_scheme
 from config.database import get_db
 from config.logger import get_logger
+from model.member.member import Member
+from dto.auth_dto import MemberInfoDTO
 
 router = APIRouter()
 logger = get_logger(__name__)
 
-@router.post("/signup", status_code=status.HTTP_201_CREATED)
-async def signup(member: MemberCreate, db: Session = Depends(get_db)):
+@router.post("/signup", response_model=CreateMemberResponseDTO, status_code=status.HTTP_201_CREATED)
+async def signup(member: CreateMemberRequestDTO, db: Session = Depends(get_db)):
     """
     회원가입 API
     """
-    logger.info(f"회원가입 시도 - 이메일: {member.email}, 닉네임: {member.nickname}")
+    logger.info(f"회원가입 시도 - 이메일: {member.email}")
     member_service = MemberService(db)
     
-    if member_service.get_member_by_email(member.email):
-        logger.warning(f"중복된 이메일로 회원가입 시도: {member.email}")
+    try:
+        # 비밀번호 검증
+        if not Member.validate_password(member.password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="비밀번호는 최소 8자 이상이며, 대문자, 소문자, 숫자, 특수문자 중 3가지 이상을 포함해야 합니다"
+            )
+        
+        # 이메일 중복 체크
+        if member_service.get_member_by_email(member.email):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="회원가입에 실패했습니다"
+            )
+        
+        # 닉네임 중복 체크
+        if member_service.get_member_by_nickname(member.nickname):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="회원가입에 실패했습니다"
+            )
+        
+        created_member = member_service.register_member(
+            email=member.email,
+            password=member.password,
+            nickname=member.nickname
+        )
+        
+        if not created_member:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="서버 오류가 발생했습니다"
+            )
+        
+        logger.info(f"회원가입 완료 - 이메일: {member.email}")
+        return CreateMemberResponseDTO(
+            id=str(created_member.id),
+            email=created_member.email,
+            nickname=created_member.nickname,
+            role=created_member.role.value,
+            created_at=created_member.created_at,
+            updated_at=created_member.updated_at
+        )
+        
+    except ValueError as e:
+        logger.error(f"회원가입 중 검증 오류 발생: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="이미 등록된 이메일입니다"
+            detail=str(e)
         )
-    
-    created_member = member_service.register_member(
-        email=member.email,
-        password=member.password,
-        nickname=member.nickname
-    )
-    
-    if not created_member:
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"회원가입 중 오류 발생: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="회원가입 중 오류가 발생했습니다"
+            detail="서버 오류가 발생했습니다"
         )
-    
-    logger.info(f"회원가입 완료 - 이메일: {member.email}")
-    return {"message": "회원가입이 완료되었습니다"}
 
 @router.post("/login", response_model=None)
 async def login(
@@ -65,15 +105,18 @@ async def login(
         logger.warning(f"로그인 실패 - 이메일: {email}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="이메일 또는 비밀번호가 잘못되었습니다",
+            detail="인증에 실패했습니다",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": member.email}, expires_delta=access_token_expires
+        data={"sub": member.email, "jti": str(uuid.uuid4())},  # JWT ID 추가
+        expires_delta=access_token_expires
     )
-    refresh_token = create_refresh_token(data={"sub": member.email})
+    refresh_token = create_refresh_token(
+        data={"sub": member.email, "jti": str(uuid.uuid4())}  # JWT ID 추가
+    )
     
     logger.info(f"로그인 성공 - 이메일: {email}")
     response.headers["Authorization"] = f"Bearer {access_token}"
@@ -81,9 +124,10 @@ async def login(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
+        secure=True,  # HTTPS에서만
         samesite="strict",
-        max_age=7 * 24 * 60 * 60  # 7 days
+        max_age=7 * 24 * 60 * 60,  # 7 days
+        path="/auth/refresh"  # 특정 경로에서만 사용
     )
     return {"message": "로그인 성공"}
 
@@ -127,8 +171,8 @@ async def logout(response: Response):
     response.delete_cookie("refresh_token")
     return {"message": "로그아웃되었습니다"}
 
-@router.get("/me", response_model=Member)
-async def read_members_me(current_member: Member = Depends(get_current_member)):
+@router.get("/me", response_model=MemberInfoDTO)
+async def read_members_me(current_member: MemberInfoDTO = Depends(get_current_member)):
     """
     현재 로그인한 사용자 정보 조회 API
     """
@@ -136,7 +180,7 @@ async def read_members_me(current_member: Member = Depends(get_current_member)):
     return current_member
 
 @router.get("/protected")
-async def protected_route(current_member: Member = Depends(get_current_member)):
+async def protected_route(current_member: MemberInfoDTO = Depends(get_current_member)):
     """
     보호된 리소스 접근 API
     """

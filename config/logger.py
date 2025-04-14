@@ -1,53 +1,62 @@
 import logging
 import os
 from logging.handlers import TimedRotatingFileHandler
+from typing import Optional
 
-LOGGER = None
+# 전역 변수 대신 로거 인스턴스를 캐시하는 딕셔너리 사용
+_logger_cache = {}
 
-def setup_logger():
-    # 로그 디렉토리 생성
+def setup_logger(name: str = "root") -> logging.Logger:
+    # 이미 설정된 로거가 있으면 반환
+    if name in _logger_cache:
+        return _logger_cache[name]
+
     log_dir = os.getenv("LOG_DIR", "logs")
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
+    os.makedirs(log_dir, exist_ok=True)
 
-    # 로거 설정
-    logger = logging.getLogger('sudays')
+    # 로거 생성
+    logger = logging.getLogger(name)
     
-    # 환경 변수에 따른 로그 레벨 설정
-    mode = os.environ.get('mode', 'prod')  # 기본값은 prod
-    log_level = logging.DEBUG if mode == 'dev' else logging.INFO
+    if logger.handlers:
+        _logger_cache[name] = logger
+        return logger
+
+    # 로그 레벨 설정
+    log_level_str = os.getenv("LOG_LEVEL", "DEBUG").upper()  # 기본값을 DEBUG로 변경
+    log_level = getattr(logging, log_level_str, logging.DEBUG)  # 기본값을 DEBUG로 변경
     logger.setLevel(log_level)
 
-    # 포맷터 설정
+    # FastAPI 기본 로그 포맷
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    # 파일 핸들러 설정 (일별 로그 파일에 기록)
+    # File handler
     file_handler = TimedRotatingFileHandler(
-        filename=os.path.join(log_dir, 'sudays.log'),
-        when='midnight',  # 매일 자정에 새로운 파일 생성
-        interval=1,  # 1일 간격
-        encoding='utf-8',
-        backupCount=30  # 30일치 로그 파일 보관
+        filename=os.path.join(log_dir, f"sudays.log"),
+        when="midnight",
+        interval=1,
+        encoding="utf-8",
+        backupCount=30,
     )
-    file_handler.setLevel(log_level)
     file_handler.setFormatter(formatter)
-    file_handler.suffix = "%Y%m%d"  # 로그 파일명 형식 지정
+    file_handler.setLevel(log_level)
+    file_handler.suffix = "%Y%m%d"
 
-    # 콘솔 핸들러 설정 (터미널에 출력)
+    # Console handler
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(log_level)
     console_handler.setFormatter(formatter)
+    console_handler.setLevel(log_level)
 
     # 핸들러 추가
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
+    logger.propagate = True
 
+    _logger_cache[name] = logger
     return logger
 
-def get_logger():
-    global LOGGER
-    if LOGGER is None:
-        LOGGER = setup_logger()
-    return LOGGER
+def get_logger(name: Optional[str] = None) -> logging.Logger:
+    if name is None:
+        name = "root"
+    return setup_logger(name)

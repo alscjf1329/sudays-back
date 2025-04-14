@@ -20,11 +20,14 @@ class DiaryDAO:
     def find_by_ids(self, ids: list[uuid.UUID]) -> Optional[Diary]:
         return self.db.query(Diary).filter(Diary.id.in_(ids)).all()
         
-    def find_by_yyyymmdd(self, yyyymmdd: str) -> Optional[Diary]:
-        return self.db.query(Diary).filter(Diary.yyyymmdd == yyyymmdd).first()
+    def find_by_yyyymmdd(self, member_id: uuid.UUID, yyyymmdd: str) -> Optional[Diary]:
+        return self.db.query(Diary).filter(Diary.member_id == member_id, Diary.yyyymmdd == yyyymmdd).first()
         
     def delete(self, diary_id: uuid.UUID) -> None:
         diary = self.find_by_id(diary_id)
         if diary:
             self.db.delete(diary)
             self.db.commit()
+
+    def find_by_id(self, diary_id: uuid.UUID) -> Optional[Diary]:
+        return self.db.query(Diary).filter(Diary.id == diary_id).first()

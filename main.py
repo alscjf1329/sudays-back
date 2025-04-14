@@ -5,13 +5,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from controller.diary.diary import router as diary_router
 from controller.auth_controller import router as auth_router
 from config.database import init_database, create_tables
-from config.logger import get_logger
+from config.logger import get_logger, setup_logger
+import logging
 
 # 환경 변수 먼저 로드
 load_dotenv(os.getenv("ENV_FILE"))
 
-# 로거 설정
-logger = get_logger()
+# 로깅 설정 초기화
+logger = get_logger(__name__)
+logger.setLevel(logging.DEBUG)  # 로그 레벨을 명시적으로 설정
 
 logger.info("╔════════════════════════════════════════════════════════╗")
 logger.info("║                서버 시작 프로세스                      ║") 
@@ -75,7 +77,7 @@ logger.info("║ 🔒 CORS 미들웨어 설정 시작")
 origins = os.getenv("ALLOW_ORIGINS").split(",")
 credentials = os.getenv("ALLOW_CREDENTIALS", "true").lower() == "true"
 methods = os.getenv("ALLOW_METHODS", "GET,POST,OPTIONS").split(",")
-headers = os.getenv("ALLOW_HEADERS", "Content-Type,Authorization").split(",")
+headers = os.getenv("ALLOW_HEADERS", "Content-Type,Authorization,authorization").split(",")
 
 logger.info("║ 📝 CORS 설정 상세:")
 logger.info(f"║   - Origins: {origins}")
@@ -89,6 +91,7 @@ app.add_middleware(
     allow_credentials=credentials,
     allow_methods=methods,
     allow_headers=headers,
+    expose_headers=["authorization"],
 )
 logger.info("║ ✅ CORS 미들웨어 설정 완료")
 

@@ -64,4 +64,16 @@ class MemberDAO:
         except Exception as e:
             logger.error(f"회원 삭제 중 오류 발생: {str(e)}")
             self.session.rollback()
-            return False 
+            return False
+
+    def find_by_email(self, email: str) -> Optional[Member]:
+        """
+        이메일로 회원 조회
+        """
+        return self.session.query(Member).filter(Member.email == email).first()
+
+    def find_by_nickname(self, nickname: str) -> Optional[Member]:
+        """
+        닉네임으로 회원 조회
+        """
+        return self.session.query(Member).filter(Member.nickname == nickname).first() 

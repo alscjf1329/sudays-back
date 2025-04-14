@@ -3,7 +3,7 @@ from dao.diary.diary_dao import DiaryDAO
 from dao.diary.diary_image_dao import DiaryImageDAO
 from model.diary.diary import Diary
 from model.diary.diary_image import DiaryImage
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import uuid
 from typing import Optional, List
@@ -34,7 +34,7 @@ class DiaryService:
 
         return self.diary_dao.find_by_yyyymmdd(member_id, yyyymmdd)
 
-    async def save_diary(self, yyyymmdd: str, content: str, images: List[UploadFile] = None, member_id: uuid.UUID = None) -> Diary:
+    async def upsert_diary(self, yyyymmdd: str, content: str, images: List[UploadFile] = None, member_id: uuid.UUID = None) -> Diary:
         try:
             logger.info(f"일기 저장 시작 - 날짜: {yyyymmdd}, 사용자: {member_id}")
 
@@ -46,11 +46,6 @@ class DiaryService:
 
             if not content.strip():
                 raise ValueError("일기 내용은 비어있을 수 없습니다.")
-
-            # 일기 저장
-            diary = Diary(member_id=member_id, yyyymmdd=yyyymmdd, content=content)
-            saved_diary = self.diary_dao.save(diary)
-            logger.info(f"일기 저장 완료 (ID: {saved_diary.id})")
 
             # 이미지 업로드 및 메타데이터 저장 처리
             image_ids = []
@@ -83,7 +78,7 @@ class DiaryService:
                         # 이미지 메타데이터 저장
                         diary_image = DiaryImage(
                             id=image_id,
-                            diary_id=saved_diary.id,  # 저장된 다이어리의 ID를 사용
+                            diary_id=None,  # 일기 ID는 나중에 설정
                             file_name=file_name,
                             extension=file_extension,
                             base_path=os.getenv("IMAGE_DIR"),
@@ -91,14 +86,35 @@ class DiaryService:
                         diary_images.append(diary_image)
                         image_ids.append(image_id)
                         logger.info(f"이미지 저장 완료: {file_name}")
-                        self.diary_image_dao.save(diary_image)
                     except Exception as e:
                         logger.error(f"이미지 처리 중 오류 발생: {str(e)}")
                         raise ValueError(f"이미지 처리 중 오류가 발생했습니다: {str(e)}")
 
-            # 이미지 ID 목록 업데이트
-            saved_diary.image_ids = image_ids
-            self.diary_dao.save(saved_diary)
+            # 기존 일기 확인
+            existing_diary = self.diary_dao.find_by_yyyymmdd(member_id, yyyymmdd)
+            
+            if existing_diary:
+                # 기존 일기 업데이트
+                existing_diary.content = content
+                existing_diary.image_ids = image_ids
+                existing_diary.updated_at = datetime.now(timezone.utc)
+                saved_diary = self.diary_dao.save(existing_diary)
+                logger.info(f"일기 업데이트 완료 (ID: {saved_diary.id})")
+            else:
+                # 새로운 일기 저장
+                diary = Diary(
+                    member_id=member_id, 
+                    yyyymmdd=yyyymmdd, 
+                    content=content,
+                    image_ids=image_ids
+                )
+                saved_diary = self.diary_dao.save(diary)
+                logger.info(f"일기 저장 완료 (ID: {saved_diary.id})")
+
+            # 이미지 메타데이터에 일기 ID 설정 및 저장
+            for diary_image in diary_images:
+                diary_image.diary_id = saved_diary.id
+                self.diary_image_dao.save(diary_image)
 
             return saved_diary
 

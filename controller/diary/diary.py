@@ -6,7 +6,7 @@ from service.diary.diary_service import DiaryService
 from fastapi.responses import Response, JSONResponse
 from typing import Optional
 from dependencies.auth_dependencies import get_current_member
-from dto.auth_dto import Member
+from dto.auth_dto import MemberInfoDTO
 from config.logger import get_logger
 
 router = APIRouter(prefix="/diary")
@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 async def get_diary(
     yyyymmdd: str, 
     db: Session = Depends(get_db),
-    current_member: Member = Depends(get_current_member)
+    current_member: MemberInfoDTO = Depends(get_current_member)
 ):
     """
     특정 날짜의 다이어리를 조회합니다.
@@ -56,7 +56,7 @@ async def upsert_diary(
     content: str = Form(...),
     images: list[UploadFile] = File(None),
     db: Session = Depends(get_db),
-    current_member: Member = Depends(get_current_member)
+    current_member: MemberInfoDTO = Depends(get_current_member)
 ):
     """
     다이어리를 저장하거나 수정합니다.
@@ -65,7 +65,7 @@ async def upsert_diary(
     diary_service = DiaryService(db)
     
     try:
-        saved_diary = await diary_service.save_diary(yyyymmdd, content, images, current_member.id)
+        saved_diary = await diary_service.upsert_diary(yyyymmdd, content, images, current_member.id)
         return SaveDiaryResponseDTO(
             id=saved_diary.id,
             yyyymmdd=saved_diary.yyyymmdd,
@@ -90,7 +90,7 @@ async def upsert_diary(
 async def get_diary_image(
     diary_image_id: str, 
     db: Session = Depends(get_db),
-    current_member: Member = Depends(get_current_member)
+    current_member: MemberInfoDTO = Depends(get_current_member)
 ):
     """
     다이어리 이미지를 조회합니다.

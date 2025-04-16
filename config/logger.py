@@ -22,8 +22,8 @@ def setup_logger(name: str = "root") -> logging.Logger:
         return logger
 
     # 로그 레벨 설정
-    log_level_str = os.getenv("LOG_LEVEL", "DEBUG").upper()  # 기본값을 DEBUG로 변경
-    log_level = getattr(logging, log_level_str, logging.DEBUG)  # 기본값을 DEBUG로 변경
+    log_level_str = os.getenv("LOG_LEVEL", "DEBUG").upper()
+    log_level = getattr(logging, log_level_str, logging.DEBUG)
     logger.setLevel(log_level)
 
     # FastAPI 기본 로그 포맷
@@ -31,17 +31,19 @@ def setup_logger(name: str = "root") -> logging.Logger:
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    # File handler
+    # File handler - TimedRotatingFileHandler로 변경
+    log_file = os.path.join(log_dir, f"sudays.log")
     file_handler = TimedRotatingFileHandler(
-        filename=os.path.join(log_dir, f"sudays.log"),
-        when="midnight",
-        interval=1,
-        encoding="utf-8",
-        backupCount=30,
+        filename=log_file,
+        when="midnight",    # 매일 자정에 로테이션
+        interval=1,         # 1일 간격
+        backupCount=30,     # 30일치 로그 보관
+        encoding='utf-8',
+        delay=True         # 첫 로그 기록 시 파일 생성
     )
     file_handler.setFormatter(formatter)
     file_handler.setLevel(log_level)
-    file_handler.suffix = "%Y%m%d"
+    file_handler.suffix = "%Y%m%d"  # 로그 파일 이름에 날짜 추가
 
     # Console handler
     console_handler = logging.StreamHandler()
@@ -51,7 +53,7 @@ def setup_logger(name: str = "root") -> logging.Logger:
     # 핸들러 추가
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
-    logger.propagate = True
+    logger.propagate = False  # propagate를 False로 설정하여 중복 로깅 방지
 
     _logger_cache[name] = logger
     return logger

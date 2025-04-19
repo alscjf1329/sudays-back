@@ -119,7 +119,14 @@ async def login(
     )
     
     logger.info(f"로그인 성공 - 이메일: {email}")
-    response.headers["Authorization"] = f"Bearer {access_token}"
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {access_token}",
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,

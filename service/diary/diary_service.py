@@ -59,6 +59,7 @@ class DiaryService:
                     file_extension = os.path.splitext(image.filename)[1].lower()
                     
                     if file_extension not in self.ALLOWED_EXTENSIONS:
+                        logger.error(f"지원하지 않는 이미지 형식: {image.filename} (확장자: {file_extension})")
                         raise ValueError(f"지원하지 않는 이미지 형식입니다. 허용된 형식: {', '.join(self.ALLOWED_EXTENSIONS)}")
 
                     try:

@@ -4,8 +4,9 @@
 export SCRIPT_DIR=$(pwd)
 export ROOT_DIR="$SCRIPT_DIR/.."
 export APP_DIR="$ROOT_DIR/app"
-
+export VENV_DIR="$ROOT_DIR/venv"
 export PYTHONPATH="$APP_DIR"
+
 cd "$ROOT_DIR"
 
 # 설정 정보 출력

@@ -15,8 +15,8 @@ if [ -z "$1" ] || [ "$1" == "--help" ]; then
 fi
 
 # 환경 변수 설정
-source ./env.sh
-source ./venv.sh
+./env.sh
+./venv.sh
 
 cd "$ROOT_DIR"
 

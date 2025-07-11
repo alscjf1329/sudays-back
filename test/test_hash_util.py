@@ -1,5 +1,5 @@
 import unittest
-from util.hash_util import HashUtil
+from app.util.hash_util import HashUtil
 
 class TestHashUtil(unittest.TestCase):
     def test_hash_password(self):

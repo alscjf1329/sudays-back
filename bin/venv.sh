@@ -1,10 +1,7 @@
 #!/bin/bash
 
-# 프로젝트 루트 디렉토리 설정
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
 # 가상 환경 디렉토리 설정
-VENV_DIR="$PROJECT_ROOT/.venv"
+VENV_DIR="$ROOT_DIR/.venv"
 
 # OS 타입 확인
 case "$OSTYPE" in
@@ -65,8 +62,8 @@ echo "╚═══════════════════════�
 python -m pip install --upgrade pip
 
 # 프로젝트 requirements 설치
-if [ -f "$PROJECT_ROOT/requirements.txt" ]; then
-    pip install -r "$PROJECT_ROOT/requirements.txt"
+if [ -f "$ROOT_DIR/requirements.txt" ]; then
+    pip install -r "$ROOT_DIR/requirements.txt"
 else
     echo "프로젝트 requirements.txt 파일을 찾을 수 없습니다."
     exit 1

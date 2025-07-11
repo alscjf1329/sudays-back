@@ -8,18 +8,19 @@ if [ -z "$1" ] || [ "$1" == "--help" ]; then
     echo "║  ./run.sh [옵션]                                       ║"
     echo "║    --dev    개발 모드로 실행 (Docker 컨테이너 포함)    ║"
     echo "║    --prod   운영 모드로 실행                           ║"
-    echo "║    --test   테스트 실행                                ║"
+    echo "║    --local  로컬 모드로 실행                            ║"
     echo "║    --help   도움말 표시                                ║"
     echo "╚════════════════════════════════════════════════════════╝"
     exit 0
 fi
 
-# bash 기준 경로 계산
-ROOT_DIR=$(dirname "$(readlink -f "$0")")
+# 환경 변수 설정
+source ./env.sh
+source ./venv.sh
 
-source "$ROOT_DIR/bin/venv.sh"
 cd "$ROOT_DIR"
 
+# 실행 모드 설정
 ARG="$1"
 mode="unknown"
 
@@ -27,8 +28,8 @@ if [ "$ARG" == "--dev" ]; then
     mode="dev"
 elif [ "$ARG" == "--prod" ]; then
     mode="prod"
-elif [ "$ARG" == "--test" ]; then
-    mode="test"
+elif [ "$ARG" == "--local" ]; then
+    mode="local"
 fi
 
 # ========================= 테스트 실행 ============================
@@ -78,12 +79,12 @@ if [ "$mode" == "test" ]; then
     exit $TEST_RESULT
 fi
 
-# ========================= 개발 모드 ============================
-if [ "$mode" == "dev" ]; then
-    ENV_FILE="$ROOT_DIR/env/dev.env"
+# ========================= 로컬 모드 ============================
+if [ "$mode" == "local" ]; then
+    ENV_FILE="$ROOT_DIR/env/local.env"
 
     echo "╔════════════════════════════════════════════════════════╗"
-    echo "║ 🚀 개발 모드로 서비스 실행을 시작합니다              "
+    echo "║ 🚀 로컬 모드로 서비스 실행을 시작합니다              "
     echo "╠════════════════════════════════════════════════════════╣"
     echo "║ 📁 환경 파일: $ENV_FILE"
 
@@ -139,11 +140,9 @@ if [ "$mode" == "dev" ]; then
     fi
 
     echo "║ ✨ DB 응답 확인됨 ($POSTGRES_HOST:$POSTGRES_PORT)"
-fi
-
 # ========================= 운영 모드 ============================
-if [ "$mode" == "prod" ]; then
-    ENV_FILE="$ROOT_DIR/env/.env"
+elif [ "$mode" == "prod"]; then
+    ENV_FILE="$ROOT_DIR/env/prod.env"
 
     echo "╔════════════════════════════════════════════════════════╗"
     echo "║ 🚀 운영 모드로 서비스 실행을 시작합니다              "
@@ -160,17 +159,23 @@ if [ "$mode" == "prod" ]; then
         echo "╚════════════════════════════════════════════════════════╝"
         exit 1
     fi
-fi
+# ========================= 개발 모드 ============================
+elif [ "$mode" == "dev"]; then
+    ENV_FILE="$ROOT_DIR/env/dev.env"
 
-# ========================= 잘못된 옵션 처리 ======================
-if [ "$mode" == "unknown" ]; then
-    echo "❌ 알 수 없는 실행 옵션: $ARG"
+    echo "╔════════════════════════════════════════════════════════╗"
+    echo "║ 🚀 개발 모드로 서비스 실행을 시작합니다              "
+    echo "╠════════════════════════════════════════════════════════╣"
+    echo "║ 📁 환경 파일: $ENV_FILE"
+else
+    echo "║ ❌ 알 수 없는 모드: $mode"
+    echo "╚════════════════════════════════════════════════════════╝"
     exit 1
 fi
 
-# START_MESSAGE 출력
-START_MSG=$(grep "START_MESSAGE" "$ENV_FILE" | cut -d'=' -f2 | tr -d '"')
+cd "$APP_DIR"
 
+# 설정 정보 출력 (이 부분 유지!)
 echo "╠════════════════════════════════════════════════════════╣"
 echo "║ 🌐 FastAPI 서버 기동 중...                            "
 echo "║ 🔗 서버 주소: http://$SERVER_HOST:$SERVER_PORT"
@@ -187,5 +192,4 @@ echo "║   - 데이터베이스: $POSTGRES_DB"
 echo "╚════════════════════════════════════════════════════════╝"
 echo ""
 
-# FastAPI 서버 실행
 uvicorn main:app --host "$SERVER_HOST" --port "$SERVER_PORT" --reload

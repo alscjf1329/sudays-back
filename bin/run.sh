@@ -115,7 +115,7 @@ cd "$APP_DIR"
 
 # 서버 기동 로그
 echo "────────────────────────────────────────────────────────────────────────"
-echo "🌐 FastAPI 서버 기동 중..."
+echo "🌐 FastAPI 서버 기동"
 echo "🔗 서버 주소:    http://$SERVER_HOST:$SERVER_PORT"
 echo "📚 API 명세:    http://$SERVER_HOST:$SERVER_PORT/docs"
 echo "📖 리덕스 문서: http://$SERVER_HOST:$SERVER_PORT/redoc"
@@ -132,16 +132,40 @@ echo "   - 데이터베이스: $POSTGRES_DB"
 echo "╚═══════════════════════════════════════════════════════════════════════╝"
 echo ""
 
-gunicorn main:app \                                 # main.py 파일의 app 객체를 실행 (main.py 내에 app = FastAPI())
-    --worker-class uvicorn.workers.UvicornWorker \  # 비동기 웹 서버(Uvicorn)를 워커로 사용 (FastAPI에 적합)
-    --workers 4 \                                   # 총 워커 수 4개 (CPU 코어 수에 비례해 설정하면 좋음)
-    --bind 0.0.0.0:8000 \                           # 모든 네트워크 인터페이스에서 8000번 포트로 바인딩
-    --timeout 60 \                                  # 요청 타임아웃 시간 (초), 이 시간 넘으면 워커 강제 종료
-    --keep-alive 5 \                                # 연결 유지 시간(초), 클라이언트가 새 연결 안 해도 이 시간만큼 유지
-    --graceful-timeout 30 \                         # 워커 종료 시 대기 시간 (초), 요청 처리 후 종료할 수 있는 유예 시간
-    --max-requests 1000 \                           # 워커 1개당 최대 요청 수, 이후 자동 재시작 (메모리 누수 대비)
-    --max-requests-jitter 100 \                     # max-requests 값에 랜덤 오차를 추가해 워커 재시작 시간 분산
-    --access-logfile logs/access.log \              # 접근 로그 파일 경로
-    --error-logfile logs/error.log \                # 에러 로그 파일 경로
-    --log-level info \                              # 로그 출력 레벨 (debug, info, warning, error, critical)
-    --preload                                       # 서버 실행 전 애플리케이션 preload (메모리 절약 가능, 단 thread-safe 해야 함)
+# Gunicorn 서버 설정
+# main.py 파일의 app 객체를 실행 (main.py 내에 app = FastAPI())
+# 비동기 웹 서버(Uvicorn)를 워커로 사용 (FastAPI에 적합)
+# 총 워커 수 4개 (CPU 코어 수에 비례해 설정하면 좋음)
+# 모든 네트워크 인터페이스에서 8000번 포트로 바인딩
+# 요청 타임아웃 시간 (초), 이 시간 넘으면 워커 강제 종료
+# 연결 유지 시간(초), 클라이언트가 새 연결 안 해도 이 시간만큼 유지
+# 워커 종료 시 대기 시간 (초), 요청 처리 후 종료할 수 있는 유예 시간
+# 워커 1개당 최대 요청 수, 이후 자동 재시작 (메모리 누수 대비)
+# max-requests 값에 랜덤 오차를 추가해 워커 재시작 시간 분산
+# 접근 로그 파일 경로
+# 에러 로그 파일 경로
+# 로그 출력 레벨 (debug, info, warning, error, critical)
+# 서버 실행 전 애플리케이션 preload (메모리 절약 가능, 단 thread-safe 해야 함)
+
+gunicorn main:app \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --workers 4 \
+    --bind 0.0.0.0:8000 \
+    --timeout 60 \
+    --keep-alive 5 \
+    --graceful-timeout 30 \
+    --max-requests 1000 \
+    --max-requests-jitter 100 \
+    --access-logfile logs/access.log \
+    --error-logfile logs/error.log \
+    --log-level info \
+    --preload \
+    > logs/gunicorn.log 2>&1 &
+
+# 백그라운드 프로세스 ID 저장
+GUNICORN_PID=$!
+echo $GUNICORN_PID > logs/gunicorn.pid
+
+echo "🚀 Gunicorn 서버가 백그라운드에서 시작되었습니다 (PID: $GUNICORN_PID)"
+echo "📋 로그 파일: logs/gunicorn.log"
+echo "🆔 프로세스 ID: logs/gunicorn.pid"

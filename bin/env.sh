@@ -14,14 +14,17 @@ if [ "$mode" == "prod" ]; then
     export ROOT_DIR="/app/sudays/diary/sudays-back"
     export OS_TYPE="linux"
     export ENV_FILE="$ROOT_DIR/env/prod.env"
+    export PID_FILE="$ROOT_DIR/pid/uvicorn.pid"
 elif [ "$mode" == "dev" ]; then
     export ROOT_DIR="/c/Users/SheepDuck/Desktop/project/sudays/sudays-back"
     export OS_TYPE="windows"
     export ENV_FILE="$ROOT_DIR/env/dev.env"
+    export PID_FILE="$ROOT_DIR/pid/uvicorn.pid"
 elif [ "$mode" == "local" ]; then
     export ROOT_DIR="/c/Users/SheepDuck/Desktop/project/sudays/sudays-back"
     export OS_TYPE="windows"
     export ENV_FILE="$ROOT_DIR/env/local.env"
+    export PID_FILE="$ROOT_DIR/pid/uvicorn.pid"
 fi
 
 # ▶ 경로 설정

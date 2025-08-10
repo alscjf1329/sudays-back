@@ -61,9 +61,7 @@ cd "$APP_DIR"
 
 # 기존 서버 상태 확인
 PID_CHECK_PATHS=(
-    "$ROOT_DIR/logs/uvicorn.pid"
-    "logs/uvicorn.pid"
-    "$APP_DIR/logs/uvicorn.pid"
+    "$PID_FILE"
 )
 
 OLD_PID=""
@@ -93,7 +91,7 @@ uvicorn main:app \
     --port 8000 \
     --reload \
     --log-level info \
-    > logs/uvicorn.log 2>&1 &
+    > "$PID_FILE" 2>&1 &
 
 # 백그라운드 프로세스 ID 저장
 UVICORN_PID=$!
@@ -114,9 +112,7 @@ fi
 
 # PID 파일 저장 시도 - 여러 경로 시도
 PID_PATHS=(
-    "$ROOT_DIR/logs/uvicorn.pid"
-    "logs/uvicorn.pid"
-    "$APP_DIR/logs/uvicorn.pid"
+    "$PID_FILE"
 )
 
 for PID_FILE in "${PID_PATHS[@]}"; do

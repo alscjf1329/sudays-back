@@ -45,12 +45,15 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
+if [ "$mode" == "local" ]; then
 if docker ps | grep -q "$POSTGRES_CONTAINER_NAME"; then
     echo "Docker 컨테이너 실행 중"
 else
     echo "Docker 컨테이너 시작 중..."
-    docker-compose up -d
+        docker-compose up -d
+    fi
 fi
+
 
 echo "DB 연결 확인 건너뜀"
 

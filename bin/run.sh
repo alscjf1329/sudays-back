@@ -1,6 +1,7 @@
 #!/bin/bash
 
 cd "$BIN_DIR"
+source ./env.sh
 source ./venv.sh
 
 cd "$APP_DIR"

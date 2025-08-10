@@ -13,8 +13,8 @@ CYAN=''
 NC=''
 
 # 스크립트 디렉토리 설정
-APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BIN_DIR="$APP_DIR/bin"
+export APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export BIN_DIR="$APP_DIR/bin"
 
 # 로그 함수
 log_info() {
@@ -182,6 +182,10 @@ show_access_log() {
 
 # 시스템 정보 함수
 show_info() {
+    cd "$BIN_DIR"
+    source ./env.sh
+    cd "$APP_DIR"
+
     echo "=========================================="
     echo "시스템 정보"
     echo "=========================================="
@@ -201,7 +205,6 @@ show_info() {
     echo "  LOG_DIR: $LOG_DIR"
     echo "  PID_DIR: $PID_DIR"
     echo "  VENV_DIR: $VENV_DIR"
-    echo "  PYTHONPATH: $PYTHONPATH"
     echo "  APP_DIR: $APP_DIR"
     echo "  BIN_DIR: $BIN_DIR"
 }

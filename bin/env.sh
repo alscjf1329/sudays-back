@@ -14,25 +14,22 @@ if [ "$mode" == "prod" ]; then
     export APP_DIR="/app/sudays/diary/sudays-back"
     export OS_TYPE="linux"
     export ENV_FILE="$APP_DIR/env/prod.env"
-    export PID_FILE="$APP_DIR/pid/uvicorn.pid"
 elif [ "$mode" == "dev" ]; then
     export APP_DIR="/c/Users/SheepDuck/Desktop/project/sudays/sudays-back"
     export OS_TYPE="windows"
     export ENV_FILE="$APP_DIR/env/dev.env"
-    export PID_FILE="$APP_DIR/pid/uvicorn.pid"
 elif [ "$mode" == "local" ]; then
     export APP_DIR="/c/Users/SheepDuck/Desktop/project/sudays/sudays-back"
     export OS_TYPE="windows"
     export ENV_FILE="$APP_DIR/env/local.env"
-    export PID_FILE="$APP_DIR/pid/uvicorn.pid"
 fi
 
 # ▶ 경로 설정
-export LOG_DIR="/logs"
-export SCRIPT_DIR="$APP_DIR/bin"
 export VENV_DIR="$APP_DIR/.venv"
-export PYTHONPATH="$APP_DIR"
 export PID_DIR="$APP_DIR/pid"
+export PID_FILE="$PID_DIR/uvicorn.pid"
+export BIN_DIR="$APP_DIR/bin"
+
 
 # ▶ 시작 로그 출력
 echo "=========================================="

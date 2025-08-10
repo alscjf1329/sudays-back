@@ -1,18 +1,17 @@
 #!/bin/bash
 
-cd "$SCRIPT_DIR"
+cd "$BIN_DIR"
 source ./env.sh
-source ./venv.sh
 
-cd "$ROOT_DIR"
+cd "$APP_DIR"
 
 echo "=========================================="
 echo "서비스 중지"
 echo "=========================================="
 
 # Uvicorn 프로세스 ID 확인
-if [ -f "logs/uvicorn.pid" ]; then
-    UVICORN_PID=$(cat logs/uvicorn.pid)
+if [ -f "$PID_FILE" ]; then
+    UVICORN_PID=$(cat "$PID_FILE")
     
     # 프로세스가 실행 중인지 확인
     if kill -0 "$UVICORN_PID" 2>/dev/null; then
@@ -48,11 +47,11 @@ if [ -f "logs/uvicorn.pid" ]; then
         fi
         
         # PID 파일 삭제
-        rm -f logs/uvicorn.pid
+        rm -f "$PID_FILE"
         
     else
         echo "서비스가 이미 종료됨"
-        rm -f logs/uvicorn.pid
+        rm -f "$PID_FILE"
     fi
 else
     echo "PID 파일 없음"

@@ -1,10 +1,9 @@
 #!/bin/bash
 
-cd "$SCRIPT_DIR"
-source ./env.sh
+cd "$BIN_DIR"
 source ./venv.sh
 
-cd "$ROOT_DIR"
+cd "$APP_DIR"
 
 # ========================= 테스트 실행 ============================
 echo "=========================================="
@@ -27,7 +26,7 @@ fi
 
 # ========================= 로컬 모드 ============================
 if [ "$mode" == "local" ]; then
-    ENV_FILE="$ROOT_DIR/env/local.env"
+    ENV_FILE="$APP_DIR/env/local.env"
 
     if [ -f "$ENV_FILE" ]; then
         set -o allexport
@@ -91,7 +90,7 @@ uvicorn main:app \
     --port 8000 \
     --reload \
     --log-level info \
-    > "$PID_FILE" 2>&1 &
+    > "$LOG_DIR/uvicorn.log" 2>&1 &
 
 # 백그라운드 프로세스 ID 저장
 UVICORN_PID=$!
@@ -99,14 +98,15 @@ echo "백그라운드 프로세스 ID: $UVICORN_PID"
 
 # 현재 디렉토리 확인
 echo "현재 디렉토리: $(pwd)"
-echo "ROOT_DIR: $ROOT_DIR"
 echo "APP_DIR: $APP_DIR"
+echo "LOG_DIR: $LOG_DIR"
+echo "PID_DIR: $PID_DIR"
 
 # 프로세스가 실제로 시작되었는지 확인
 sleep 2
 if ! kill -0 "$UVICORN_PID" 2>/dev/null; then
     echo "경고: uvicorn 프로세스가 시작되지 않았습니다"
-    echo "로그 확인: tail -f logs/uvicorn.log"
+    echo "로그 확인: tail -f $LOG_DIR/uvicorn.log"
     exit 1
 fi
 

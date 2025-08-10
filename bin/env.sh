@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ▶ 실행 모드 설정 (local/dev/prod 중 하나)
-export mode="local"  # <-- 필요 시 변경
+export mode="prod"  # <-- 필요 시 변경
 
 # ▶ 기본 유효성 검사
 if [ "$mode" == "unknown" ]; then
@@ -11,27 +11,28 @@ fi
 
 # ▶ 환경별 설정
 if [ "$mode" == "prod" ]; then
-    export ROOT_DIR="/app/sudays/diary/sudays-back"
+    export APP_DIR="/app/sudays/diary/sudays-back"
     export OS_TYPE="linux"
-    export ENV_FILE="$ROOT_DIR/env/prod.env"
-    export PID_FILE="$ROOT_DIR/pid/uvicorn.pid"
+    export ENV_FILE="$APP_DIR/env/prod.env"
+    export PID_FILE="$APP_DIR/pid/uvicorn.pid"
 elif [ "$mode" == "dev" ]; then
-    export ROOT_DIR="/c/Users/SheepDuck/Desktop/project/sudays/sudays-back"
+    export APP_DIR="/c/Users/SheepDuck/Desktop/project/sudays/sudays-back"
     export OS_TYPE="windows"
-    export ENV_FILE="$ROOT_DIR/env/dev.env"
-    export PID_FILE="$ROOT_DIR/pid/uvicorn.pid"
+    export ENV_FILE="$APP_DIR/env/dev.env"
+    export PID_FILE="$APP_DIR/pid/uvicorn.pid"
 elif [ "$mode" == "local" ]; then
-    export ROOT_DIR="/c/Users/SheepDuck/Desktop/project/sudays/sudays-back"
+    export APP_DIR="/c/Users/SheepDuck/Desktop/project/sudays/sudays-back"
     export OS_TYPE="windows"
-    export ENV_FILE="$ROOT_DIR/env/local.env"
-    export PID_FILE="$ROOT_DIR/pid/uvicorn.pid"
+    export ENV_FILE="$APP_DIR/env/local.env"
+    export PID_FILE="$APP_DIR/pid/uvicorn.pid"
 fi
 
 # ▶ 경로 설정
-export SCRIPT_DIR="$ROOT_DIR/bin"
-export APP_DIR="$ROOT_DIR/app"
-export VENV_DIR="$ROOT_DIR/.venv"
+export LOG_DIR="/logs"
+export SCRIPT_DIR="$APP_DIR/bin"
+export VENV_DIR="$APP_DIR/.venv"
 export PYTHONPATH="$APP_DIR"
+export PID_DIR="$APP_DIR/pid"
 
 # ▶ 시작 로그 출력
 echo "=========================================="

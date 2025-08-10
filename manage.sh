@@ -13,10 +13,8 @@ CYAN=''
 NC=''
 
 # 스크립트 디렉토리 설정
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$SCRIPT_DIR"
-APP_DIR="$ROOT_DIR/app"
-BIN_DIR="$ROOT_DIR/bin"
+BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$BIN_DIR/.."
 
 # 로그 함수
 log_info() {
@@ -85,7 +83,8 @@ stop_service() {
 
 restart_service() {
     log_header "서비스를 재시작합니다..."
-    bash "$BIN_DIR/restart.sh"
+    stop_service
+    start_service
 }
 
 status_service() {
@@ -96,7 +95,7 @@ status_service() {
 # 개발 관련 함수들
 run_tests() {
     log_header "테스트를 실행합니다..."
-    cd "$ROOT_DIR" && python -m unittest discover -s test -p "test_*.py" -v
+    cd "$APP_DIR" && python -m unittest discover -s test -p "test_*.py" -v
 }
 
 # 설치 및 설정 함수들
@@ -107,8 +106,8 @@ install_deps() {
 
 setup_project() {
     log_header "초기 설정을 수행합니다..."
-    mkdir -p logs
-    mkdir -p uploads/images
+    mkdir -p "$LOG_DIR"
+    mkdir -p "$APP_DIR/uploads/images"
     log_success "디렉토리 생성 완료"
 }
 
@@ -140,7 +139,7 @@ show_log() {
     echo "=========================================="
     echo "로그 확인"
     echo "=========================================="
-    LOG_DIR=${LOG_DIR:-"logs"}
+    LOG_DIR=${LOG_DIR:-"$LOG_DIR"}
     APP_LOG_FILE=${APP_LOG_FILE:-"sudays.log"}
     LOG_FILE_PATH="$LOG_DIR/$APP_LOG_FILE"
     
@@ -155,7 +154,7 @@ show_error_log() {
     echo "=========================================="
     echo "에러 로그 확인"
     echo "=========================================="
-    LOG_DIR=${LOG_DIR:-"logs"}
+    LOG_DIR=${LOG_DIR:-"$LOG_DIR"}
     ERROR_LOG_FILE=${ERROR_LOG_FILE:-"error.log"}
     LOG_FILE_PATH="$LOG_DIR/$ERROR_LOG_FILE"
     
@@ -170,7 +169,7 @@ show_access_log() {
     echo "=========================================="
     echo "접근 로그 확인"
     echo "=========================================="
-    LOG_DIR=${LOG_DIR:-"logs"}
+    LOG_DIR=${LOG_DIR:-"$LOG_DIR"}
     ACCESS_LOG_FILE=${ACCESS_LOG_FILE:-"access.log"}
     LOG_FILE_PATH="$LOG_DIR/$ACCESS_LOG_FILE"
     
@@ -199,9 +198,12 @@ show_info() {
     pwd
     echo ""
     echo "환경 변수:"
-    echo "  ROOT_DIR: $ROOT_DIR"
+    echo "  LOG_DIR: $LOG_DIR"
+    echo "  PID_DIR: $PID_DIR"
+    echo "  VENV_DIR: $VENV_DIR"
+    echo "  PYTHONPATH: $PYTHONPATH"
     echo "  APP_DIR: $APP_DIR"
-    echo "  SCRIPT_DIR: $SCRIPT_DIR"
+    echo "  BIN_DIR: $BIN_DIR"
 }
 
 # 메인 로직
@@ -230,44 +232,33 @@ case "$1" in
     "stop")
         stop_service
         ;;
-    "start"|"restart"|"status"|"test"|"install"|"log"|"log-error"|"log-access"|"info")
-        # 환경 변수 로드가 필요한 명령어들
-        if [ -f "bin/env.sh" ]; then
-            source bin/env.sh
-        fi
-        
-        if [ -f "bin/venv.sh" ]; then
-            source bin/venv.sh
-        fi
-        
-        case "$1" in
-            "start")
-                start_service
-                ;;
-            "restart")
-                restart_service
-                ;;
-            "status")
-                status_service
-                ;;
-            "test")
-                run_tests
-                ;;
-            "install")
-                install_deps
-                ;;
-            "log")
-                show_log
-                ;;
-            "log-error")
-                show_error_log
-                ;;
-            "log-access")
-                show_access_log
-                ;;
-            "info")
-                show_info
-                ;;
+    "start")
+        start_service
+        ;;
+    "restart")
+        restart_service
+        ;;
+    "status")
+        status_service
+        ;;
+    "test")
+        run_tests
+        ;;
+    "install")
+        install_deps
+        ;;
+    "log")
+        show_log
+        ;;
+    "log-error")
+        show_error_log
+        ;;
+    "log-access")
+        show_access_log
+        ;;
+    "info")
+        show_info
+        ;;
         esac
         ;;
     *)

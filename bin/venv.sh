@@ -1,5 +1,8 @@
 #!/bin/bash
-cd "$ROOT_DIR"
+cd "$BIN_DIR"
+source ./env.sh
+
+cd "$APP_DIR"
 
 echo "=========================================="
 echo "가상환경 설정"
@@ -38,11 +41,11 @@ python -m pip install --upgrade pip > /dev/null
 echo "pip 업그레이드 완료"
 
 # ▶ 패키지 설치
-if [ -f "$ROOT_DIR/requirements.txt" ]; then
+if [ -f "$APP_DIR/requirements.txt" ]; then
     echo "패키지 설치 중..."
-    pip install -r "$ROOT_DIR/requirements.txt" > /dev/null 2>&1
+    pip install -r "$APP_DIR/requirements.txt" > /dev/null 2>&1
     echo "패키지 설치 완료"
 else
-    echo "requirements.txt 파일 없음: $ROOT_DIR/requirements.txt"
+    echo "requirements.txt 파일 없음: $APP_DIR/requirements.txt"
     exit 1
 fi

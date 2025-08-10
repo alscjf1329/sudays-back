@@ -1,10 +1,9 @@
 #!/bin/bash
 
-cd "$SCRIPT_DIR"
+cd "$BIN_DIR"
 source ./env.sh
-source ./venv.sh
 
-cd "$ROOT_DIR"
+cd "$APP_DIR"
 
 # ========================= 서비스 상태 확인 ============================
 echo "=========================================="
@@ -12,14 +11,14 @@ echo "서비스 상태"
 echo "=========================================="
 
 # Uvicorn 서버 상태 확인 (PID 파일 기반)
-if [ -f "logs/uvicorn.pid" ]; then
-    UVICORN_PID=$(cat logs/uvicorn.pid)
+if [ -f "$PID_FILE" ]; then
+    UVICORN_PID=$(cat "$PID_FILE")
     if kill -0 "$UVICORN_PID" 2>/dev/null; then
         echo "서버: 실행 중 (PID: $UVICORN_PID)"
         echo "포트: 사용 중"
     else
         echo "서버: 중지됨"
-        rm -f logs/uvicorn.pid
+        rm -f "$PID_FILE"
     fi
 else
     echo "서버: 중지됨"
@@ -47,15 +46,15 @@ fi
 # 로그 파일 상태 확인
 echo "로그 파일:"
 LOG_FILES=(
-    "logs/uvicorn.log"
-    "logs/access.log"
-    "logs/error.log"
-    "logs/uvicorn.pid"
+    "$LOG_DIR/uvicorn.log"
+    "$LOG_DIR/access.log"
+    "$LOG_DIR/error.log"
+    "$PID_FILE"
 )
 
 for log_file in "${LOG_FILES[@]}"; do
     if [ -f "$log_file" ]; then
-        if [ "$log_file" = "logs/uvicorn.pid" ]; then
+        if [ "$log_file" = "$PID_FILE" ]; then
             echo "  $log_file: 있음"
         else
             size=$(du -h "$log_file" 2>/dev/null | cut -f1 || echo "알 수 없음")
@@ -77,8 +76,8 @@ echo "상태 요약"
 echo "=========================================="
 
 # Uvicorn 상태
-if [ -f "logs/uvicorn.pid" ]; then
-    UVICORN_PID=$(cat logs/uvicorn.pid)
+if [ -f "$PID_FILE" ]; then
+    UVICORN_PID=$(cat "$PID_FILE")
     if kill -0 "$UVICORN_PID" 2>/dev/null; then
         SERVER_STATUS="실행 중"
     else

@@ -211,9 +211,6 @@ case "$1" in
     "help"|"")
         show_help
         ;;
-    "info")
-        show_info
-        ;;
     "setup")
         setup_project
         ;;
@@ -258,8 +255,6 @@ case "$1" in
         ;;
     "info")
         show_info
-        ;;
-        esac
         ;;
     *)
         log_error "알 수 없는 명령어: $1"

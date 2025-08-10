@@ -13,8 +13,8 @@ CYAN=''
 NC=''
 
 # 스크립트 디렉토리 설정
-BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_DIR="$BIN_DIR/.."
+APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BIN_DIR="$APP_DIR/bin"
 
 # 로그 함수
 log_info() {

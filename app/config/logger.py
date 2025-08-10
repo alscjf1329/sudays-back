@@ -11,9 +11,12 @@ def setup_logger(name: str = "root") -> logging.Logger:
     if name in _logger_cache:
         return _logger_cache[name]
 
+    # 환경 변수에서 로그 설정 가져오기
     log_dir = os.getenv("LOG_DIR", "logs")
-    os.makedirs(log_dir, exist_ok=True)
-
+    app_log_file = os.getenv("APP_LOG_FILE", "sudays.log")
+    log_level_str = os.getenv("LOG_LEVEL", "DEBUG").upper()
+    log_level = getattr(logging, log_level_str, logging.DEBUG)
+    
     # 로거 생성
     logger = logging.getLogger(name)
     
@@ -21,9 +24,6 @@ def setup_logger(name: str = "root") -> logging.Logger:
         _logger_cache[name] = logger
         return logger
 
-    # 로그 레벨 설정
-    log_level_str = os.getenv("LOG_LEVEL", "DEBUG").upper()
-    log_level = getattr(logging, log_level_str, logging.DEBUG)
     logger.setLevel(log_level)
 
     # FastAPI 기본 로그 포맷
@@ -31,19 +31,22 @@ def setup_logger(name: str = "root") -> logging.Logger:
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    # File handler - TimedRotatingFileHandler로 변경
-    log_file = os.path.join(log_dir, f"sudays.log")
+    # 로그 디렉토리 생성
+    os.makedirs(log_dir, exist_ok=True)
+    
+    # File handler
+    log_file = os.path.join(log_dir, app_log_file)
     file_handler = TimedRotatingFileHandler(
         filename=log_file,
-        when="midnight",    # 매일 자정에 로테이션
-        interval=1,         # 1일 간격
-        backupCount=30,     # 30일치 로그 보관
+        when="midnight",
+        interval=1,
+        backupCount=30,
         encoding='utf-8',
-        delay=True         # 첫 로그 기록 시 파일 생성
+        delay=False
     )
     file_handler.setFormatter(formatter)
     file_handler.setLevel(log_level)
-    file_handler.suffix = "%Y%m%d"  # 로그 파일 이름에 날짜 추가
+    file_handler.suffix = "%Y%m%d"
 
     # Console handler
     console_handler = logging.StreamHandler()
@@ -53,7 +56,10 @@ def setup_logger(name: str = "root") -> logging.Logger:
     # 핸들러 추가
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
-    logger.propagate = False  # propagate를 False로 설정하여 중복 로깅 방지
+    logger.propagate = False
+
+    # 초기 로그 메시지로 설정 확인
+    logger.info(f"로거 초기화 완료 - 이름: {name}, 레벨: {log_level_str}, 파일: {log_file}")
 
     _logger_cache[name] = logger
     return logger

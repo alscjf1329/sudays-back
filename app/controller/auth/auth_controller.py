@@ -11,6 +11,7 @@ from config.jwt_config import (
 )
 from dto.member_dto import CreateMemberRequestDTO, CreateMemberResponseDTO
 from service.member.member_service import MemberService
+from service.email.email_service import EmailService
 from dependencies.auth_dependencies import get_current_member, oauth2_scheme
 from config.database import get_db
 from config.logger import get_logger
@@ -20,13 +21,14 @@ from dto.auth_dto import MemberInfoDTO
 router = APIRouter()
 logger = get_logger(__name__)
 
-@router.post("/signup", response_model=CreateMemberResponseDTO, status_code=status.HTTP_201_CREATED)
+@router.post("/auth/signup", response_model=CreateMemberResponseDTO, status_code=status.HTTP_201_CREATED)
 async def signup(member: CreateMemberRequestDTO, db: Session = Depends(get_db)):
     """
-    회원가입 API
+    회원가입 API (이메일 인증 필요)
     """
     logger.info(f"회원가입 시도 - 이메일: {member.email}")
     member_service = MemberService(db)
+    email_service = EmailService(db)
     
     try:
         # 비밀번호 검증
@@ -40,14 +42,21 @@ async def signup(member: CreateMemberRequestDTO, db: Session = Depends(get_db)):
         if member_service.get_member_by_email(member.email):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="회원가입에 실패했습니다"
+                detail="이미 가입된 이메일입니다"
             )
         
         # 닉네임 중복 체크
         if member_service.get_member_by_nickname(member.nickname):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="회원가입에 실패했습니다"
+                detail="이미 사용 중인 닉네임입니다"
+            )
+        
+        # 이메일 인증 상태 확인
+        if not email_service.is_email_verified(member.email):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="이메일 인증이 필요합니다. 먼저 이메일 인증을 완료해주세요"
             )
         
         created_member = member_service.register_member(
@@ -87,7 +96,7 @@ async def signup(member: CreateMemberRequestDTO, db: Session = Depends(get_db)):
             detail="서버 오류가 발생했습니다"
         )
 
-@router.post("/login", response_model=None)
+@router.post("/auth/login", response_model=None)
 async def login(
     email: str = Form(...),
     password: str = Form(...),
@@ -138,7 +147,7 @@ async def login(
     )
     return {"message": "로그인 성공"}
 
-@router.post("/refresh")
+@router.post("/auth/refresh")
 async def refresh_token(
     response: Response,
     refresh_token: str = Cookie(None)
@@ -169,7 +178,7 @@ async def refresh_token(
     response.headers["Authorization"] = f"Bearer {access_token}"
     return {"message": "토큰이 갱신되었습니다"}
 
-@router.post("/logout")
+@router.post("/auth/logout")
 async def logout(response: Response):
     """
     로그아웃 API
@@ -178,7 +187,7 @@ async def logout(response: Response):
     response.delete_cookie("refresh_token")
     return {"message": "로그아웃되었습니다"}
 
-@router.get("/me", response_model=MemberInfoDTO)
+@router.get("/auth/me", response_model=MemberInfoDTO)
 async def read_members_me(current_member: MemberInfoDTO = Depends(get_current_member)):
     """
     현재 로그인한 사용자 정보 조회 API
@@ -186,10 +195,11 @@ async def read_members_me(current_member: MemberInfoDTO = Depends(get_current_me
     logger.debug(f"사용자 정보 조회 - 이메일: {current_member.email}")
     return current_member
 
-@router.get("/protected")
+@router.get("/auth/protected")
 async def protected_route(current_member: MemberInfoDTO = Depends(get_current_member)):
     """
     보호된 리소스 접근 API
     """
     logger.debug(f"보호된 리소스 접근 - 사용자: {current_member.email}")
     return {"message": f"안녕하세요, {current_member.nickname}님! 보호된 리소스에 접근하셨습니다."}
+

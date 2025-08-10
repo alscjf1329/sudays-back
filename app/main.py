@@ -3,7 +3,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from controller.diary.diary import router as diary_router
-from controller.auth_controller import router as auth_router
+from controller.auth.auth_controller import router as auth_router
+from controller.auth.verify_controller import router as verify_router
 from config.database import init_database, create_tables
 from config.logger import get_logger, setup_logger
 import logging
@@ -96,6 +97,7 @@ app.add_middleware(
 logger.info("║ ✅ CORS 미들웨어 설정 완료")
 
 app.include_router(diary_router)
-app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(auth_router, tags=["auth"])
+app.include_router(verify_router, prefix="/auth", tags=["auth"])
 logger.info("║ 🚀 FastAPI 서버 시작 완료")
 logger.info("╚════════════════════════════════════════════════════════╝")

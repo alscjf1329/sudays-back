@@ -3,7 +3,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 import enum
 import uuid
-from model.base import Base
+from config.database import Base
 
 class MemberRole(enum.Enum):
     ADMIN = "ADMIN"

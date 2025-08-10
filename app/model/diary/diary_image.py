@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, DateTime, UUID, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 import uuid
-from model.base import Base
+from config.database import Base
 
 class DiaryImage(Base):
     __tablename__ = "diary_image"
